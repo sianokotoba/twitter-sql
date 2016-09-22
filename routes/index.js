@@ -64,26 +64,31 @@ module.exports = function makeRouterWithSockets (io) {
 //     })
 // });
 
-
+/* WORKING CODE FOR CURRENT AND NEW USER POSTS */
   router.post('/tweets', function(req, res, next){
     client.query('SELECT id FROM users WHERE name=$1', [req.body.name], function (err,result){
-      result = result.rows[0]['id'];
+
       if (err) return next(err);
-      if (result){
+      if (result.rows[0]){
+        result = result.rows[0]['id'];
         client.query('INSERT INTO tweets (userId, content) VALUES ($1, $2)', [result, req.body.content], function (err, result2){
           var newTweets = result2.rows;
           res.redirect('/');
           io.sockets.emit('new_tweet', newTweets);
         })
       } else {
-        //client.query('INSERT INTO users (id, ')
+        client.query('INSERT INTO users (name) VALUES ($1)', [req.body.name], function(err, result3) {
+          client.query('SELECT id FROM users WHERE name=$1', [req.body.name], function(err, result4) {
+            client.query('INSERT INTO tweets (userId, content) VALUES ($1, $2)', [result4.rows[0]['id'], req.body.content], function(err, result5){
+            var newTweets = result5.rows;
+            res.redirect('/');
+            io.sockets.emit('new_tweet', newTweets);
+            })
+          })
+        });
       }
     })
   });
-
-
-
-
 
 
 
